@@ -1,25 +1,27 @@
 class Api::V1::UsersController < ApplicationController
-    def create
-        @user = User.create(user_params)
-        if @user.valid?
-          render json: { user: UserSerializer.new(@user) }, status: :created
-        else
-          render json: { error: 'failed to create user' }, status: :unprocessable_entity
-        end
-      end
+    skip_before_action :authorized, only: [:create]
 
-      def profile
-        render json: {user: "waluka2222"}.to_json()
-      end
-      
-      def show
-        user = User.all
-        render json: user.to_json()
-      end
+  def profile
+    render json: { user: UserSerializer.new(current_user) }, status: :accepted
+  end
 
-    
-      private
-      def user_params
-        params.require(:user).permit(:username, :password, :bio, :avatar)
-      end
+  def create
+    @user = User.create(user_params)
+    if @user.valid?
+      @token = encode_token({ user_id: @user.id })
+      render json: { user: UserSerializer.new(@user), jwt: @token }, status: :created
+    else
+      render json: { error: 'failed to create user' }, status: :unprocessable_entity
+    end
+  end
+
+  def show
+   let allu=User.all
+   render json: allu
+  end
+  private
+
+  def user_params
+    params.require(:user).permit(:username, :password, :bio, :avatar)
+  end
 end
